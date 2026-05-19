@@ -159,8 +159,9 @@
     <button class="retry-btn" onclick="location.reload()">إعادة المحاولة</button>
   </div>
   <iframe id="appFrame" src="https://script.google.com/macros/s/AKfycbx-uLhgTxBzKiD0ztz9Xet7qzfRS_KSDxnRxmautgLQm9HVr_pC3kzJrzhpI9j4IWxWBg/exec" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
-  <script>
-    // ===== التطبيق الرئيسي =====
+  
+  <script type="module">
+    // ===== التطبيق الرئيسي والتحميل =====
     (function(){
       var frame=document.getElementById('appFrame');
       var splash=document.getElementById('splash');
@@ -171,7 +172,7 @@
       };
     })();
 
-    // ===== Install Prompt =====
+    // ===== الرفع والـ Install Prompt =====
     (function(){
       var deferredPrompt, banner=document.getElementById('installBanner');
       window.addEventListener('beforeinstallprompt',function(e){
@@ -190,68 +191,75 @@
       window.addEventListener('appinstalled',function(){banner.classList.remove('show')});
     })();
 
-    // ===== Service Worker =====
+    // ===== تسجيل الـ Service Worker الأساسي =====
     (function(){
-      if('serviceWorker'in navigator){
+      if('serviceWorker' in navigator){
         navigator.serviceWorker.register('sw.js').then(function(reg){
-          console.log('SW registered:',reg.scope);
-          reg.addEventListener('updatefound',function(){console.log('New update available')});
-        }).catch(function(err){console.log('SW registration skipped:',err.message)});
+          console.log('SW registered:', reg.scope);
+        }).catch(function(err){console.log('SW registration skipped:', err.message)});
       }
     })();
 
-    // ===== Firebase Cloud Messaging (إشعارات) =====
-    var FB_CONFIG = null;
+    // ===== تهيئة وإعداد Firebase Cloud Messaging (FCM) الحديثة =====
+    // استيراد الدوال بنظام الـ Modules لمنع أي تداخل أو تهنيج في التصفح
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js";
+
     (function(){
-      // استعلام عن إعدادات Firebase من GAS
+      // استعلام عن إعدادات Firebase الديناميكية من الـ Apps Script الخاص بمحطتك
       var xhr = new XMLHttpRequest();
       xhr.open('GET', document.getElementById('appFrame').src.split('/exec')[0] + '/exec?fn=getFirebaseConfig');
       xhr.onload = function() {
-        try { FB_CONFIG = JSON.parse(xhr.responseText); } catch(e) {}
-        if (FB_CONFIG && FB_CONFIG.apiKey) initFCM();
+        try {
+          var fbConfig = JSON.parse(xhr.responseText);
+          if (fbConfig && fbConfig.apiKey) {
+            initFCM(fbConfig);
+          }
+        } catch(e) { console.log("Firebase config load error:", e); }
       };
       xhr.send();
     })();
 
-    function initFCM() {
-      if (!FB_CONFIG || !FB_CONFIG.apiKey) return;
+    function initFCM(config) {
       try {
-        // Import Firebase dynamically
-        import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js').then(function(appMod) {
-          import('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js').then(function(msgMod) {
-            var app = appMod.default.initializeApp({
-              apiKey: FB_CONFIG.apiKey,
-              authDomain: FB_CONFIG.authDomain,
-              projectId: FB_CONFIG.projectId,
-              messagingSenderId: FB_CONFIG.messagingSenderId,
-              appId: FB_CONFIG.appId
-            });
-            var messaging = msgMod.default.getMessaging(app);
-            Notification.requestPermission().then(function(perm) {
-              if (perm === 'granted') {
-                messaging.getToken({vapidKey: FB_CONFIG.vapidKey}).then(function(token) {
-                  console.log('FCM token:', token);
-                  // Save token to localStorage for the GAS iframe to read
-                  localStorage.setItem('fcm_token', token);
-                  // Also pass via postMessage to iframe
-                  document.getElementById('appFrame').contentWindow.postMessage({type:'fcm_token', token:token}, '*');
-                }).catch(function(err){console.log('FCM token error:',err)});
-              }
-            });
-            // Handle foreground messages
-            msgMod.default.onMessage(messaging, function(payload) {
-              var title = payload.notification?.title || 'إجازات مرشحة زفتى';
-              var body = payload.notification?.body || '';
-              if (Notification.permission === 'granted') {
-                new Notification(title, {body:body, icon:__pwaIcons?.[512]||undefined});
-              }
-            });
-          });
+        // تهيئة الـ App
+        const app = initializeApp({
+          apiKey: config.apiKey,
+          authDomain: config.authDomain,
+          projectId: config.projectId,
+          storageBucket: config.storageBucket,
+          messagingSenderId: config.messagingSenderId,
+          appId: config.appId
         });
+
+        const messaging = getMessaging(app);
+
+        // طلب صلاحية الإشعارات من المتصفح
+        Notification.requestPermission().then(function(perm) {
+          if (perm === 'granted') {
+            // توليد الـ Token الفريد للجهاز
+            getToken(messaging, { vapidKey: config.vapidKey }).then(function(token) {
+              console.log('FCM token:', token);
+              localStorage.setItem('fcm_token', token);
+              // إرسال الـ Token فوراً للإطار (iframe) لتحديث شيت الموظفين
+              document.getElementById('appFrame').contentWindow.postMessage({type:'fcm_token', token:token}, '*');
+            }).catch(function(err){console.log('FCM token error:', err)});
+          }
+        });
+
+        // معالجة الإشعارات المستلمة في الواجهة الأمامية (Foreground Messages)
+        onMessage(messaging, function(payload) {
+          var title = payload.notification?.title || 'إجازات مرشحة زفتى';
+          var body = payload.notification?.body || '';
+          if (Notification.permission === 'granted') {
+            new Notification(title, { body: body, icon: window.__pwaIcons?.[512] || undefined });
+          }
+        });
+
       } catch(e) { console.log('FCM init error:', e); }
     }
 
-    // ===== طلب الموقع عند تحميل الصفحة =====
+    // ===== طلب الموقع الجغرافي وحفظه بـ LocalStorage =====
     (function() {
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(function(pos) {
@@ -261,7 +269,7 @@
       }
     })();
 
-    // ===== استقبال أحداث من الـ iframe =====
+    // ===== استقبال الأحداث وتجهيز بيانات الجهاز لإرسالها للـ iframe =====
     window.addEventListener('message', function(e) {
       if (e.data && e.data.type === 'get_device_info') {
         var info = {
@@ -279,7 +287,7 @@
       }
     });
 
-    // ===== اتصال / قطع =====
+    // ===== إدارة حالة الاتصال بالإنترنت =====
     window.addEventListener('offline',function(){document.getElementById('offline').classList.add('show')});
     window.addEventListener('online',function(){document.getElementById('offline').classList.remove('show')});
   </script>
