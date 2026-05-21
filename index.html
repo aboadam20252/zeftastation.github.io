@@ -60,7 +60,7 @@
         name:'إجازات مرشحة زفتى',short_name:'إجازات زفتى',
         description:'نظام إدارة الإجازات - محطة مياه زفتى',
         start_url:'.',display:'standalone',
-        background_color: '#1e293b', // تم الإصلاح هنا بإضافة علامات التنصيص
+        background_color: '#1e293b',
         theme_color:'#0ea5e9',
         dir:'rtl',lang:'ar',
         icons:[{src:i192,sizes:'192x192',type:'image/png'},{src:i512,sizes:'512x512',type:'image/png',purpose:'any maskable'}]
@@ -160,13 +160,17 @@
     <button class="retry-btn" onclick="location.reload()">إعادة المحاولة</button>
   </div>
 
-  <iframe id="appFrame" src="https://script.google.com/macros/s/AKfycbwNqPIytHWO041qxq0HBy32jAq-NCW_PfgjrGUCB0yPfevII1gSRC3vGxiB7o4n660J/exec" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
+  <iframe id="appFrame" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
   
   <script type="module">
-    // ===== التحكم في شاشة التحميل والأطر =====
+    // ===== التحكم في شاشة التحميل والأطر + الرابط السحري =====
     (function(){
       var frame=document.getElementById('appFrame');
       var splash=document.getElementById('splash');
+      var baseUrl = 'https://script.google.com/macros/s/AKfycbw6dPKTIm_rfiG43LZ9taworCV1U1L4GhZ8WvpjanfS9RliIPqOt4BwNdu6pa62Wf2xvQ/exec';
+      var params = new URLSearchParams(window.location.search);
+      var token = params.get('token');
+      frame.src = token ? baseUrl + '?token=' + token : baseUrl;
       frame.onload=function(){
         splash.classList.add('hide');
         frame.classList.add('show');
@@ -233,19 +237,16 @@
 
         const messaging = getMessaging(app);
 
-        // طلب صلاحية الإشعارات الفورية
         Notification.requestPermission().then(function(perm) {
           if (perm === 'granted') {
             getToken(messaging, { vapidKey: config.vapidKey }).then(function(token) {
               console.log('FCM token:', token);
               localStorage.setItem('fcm_token', token);
-              // تمرير الـ Token مباشرة للفورم داخل الـ iframe لحفظه في الشيت
               document.getElementById('appFrame').contentWindow.postMessage({type:'fcm_token', token:token}, '*');
             }).catch(function(err){console.log('FCM token error:', err)});
           }
         });
 
-        // استقبال الإشعارات في الواجهة الأمامية (Foreground)
         onMessage(messaging, function(payload) {
           var title = payload.notification?.title || 'إجازات مرشحة زفتى';
           var body = payload.notification?.body || '';
@@ -257,7 +258,7 @@
       } catch(e) { console.log('FCM init error:', e); }
     }
 
-    // ===== تتبع الموقع الجغرافي وحفظه بذاكرة المتصفح المحلیة لربطه بالحضور والانصراف =====
+    // ===== تتبع الموقع الجغرافي =====
     (function() {
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(function(pos) {
@@ -267,7 +268,7 @@
       }
     })();
 
-    // ===== إرسال بيانات الجهاز والموقع لشيت جوجل عبر الـ Iframe عند الطلب =====
+    // ===== إرسال بيانات الجهاز للـ Iframe =====
     window.addEventListener('message', function(e) {
       if (e.data && e.data.type === 'get_device_info') {
         var info = {
@@ -285,7 +286,6 @@
       }
     });
 
-    // مراقبة شبكة الاتصال
     window.addEventListener('offline',function(){document.getElementById('offline').classList.add('show')});
     window.addEventListener('online',function(){document.getElementById('online').classList.remove('show')});
   </script>
