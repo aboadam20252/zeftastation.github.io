@@ -215,9 +215,9 @@
       s.src = document.getElementById('appFrame').src.split('/exec')[0] + '/exec?fn=getFirebaseConfig&callback=handleFirebaseConfig';
       document.body.appendChild(s);
     })();
-    function handleFirebaseConfig(config) {
+    window.handleFirebaseConfig = function(config) {
       if (config && config.apiKey) initFCM(config);
-    }
+    };
 
     function initFCM(config) {
       try {
