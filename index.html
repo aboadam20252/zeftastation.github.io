@@ -10,7 +10,7 @@
   <title>إجازات مرشحة زفتى</title>
   <link rel="manifest" id="pwaManifest" href="data:application/manifest+json,{}">
   <script>
-    // ===== Manifest with embedded icons (data URIs) =====
+    // ===== توليد الأيقونات والمشغل الديناميكي للـ PWA =====
     (function() {
       function genIcon(size) {
         var c=document.createElement('canvas'),s=size;
@@ -60,7 +60,7 @@
         name:'إجازات مرشحة زفتى',short_name:'إجازات زفتى',
         description:'نظام إدارة الإجازات - محطة مياه زفتى',
         start_url:'.',display:'standalone',
-        background_color:'#1e293b',theme_color:'#0ea5e9',
+        background_color:#1e293b,theme_color:'#0ea5e9',
         dir:'rtl',lang:'ar',
         icons:[{src:i192,sizes:'192x192',type:'image/png'},{src:i512,sizes:'512x512',type:'image/png',purpose:'any maskable'}]
       };
@@ -158,10 +158,11 @@
     <p style="color:#94a3b8">يتطلب التطبيق اتصالاً بالإنترنت</p>
     <button class="retry-btn" onclick="location.reload()">إعادة المحاولة</button>
   </div>
+
   <iframe id="appFrame" src="https://script.google.com/macros/s/AKfycbzCgBcNk1O2Xpd-sCtlYcvv-mtdrxG8jgZPUxEbAzD5hdWhwwy0FP1-MaQP_ldX3EeFkA/exec" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
   
   <script type="module">
-    // ===== التطبيق الرئيسي والتحميل =====
+    // ===== التحكم في شاشة التحميل والأطر =====
     (function(){
       var frame=document.getElementById('appFrame');
       var splash=document.getElementById('splash');
@@ -172,7 +173,7 @@
       };
     })();
 
-    // ===== الرفع والـ Install Prompt =====
+    // ===== واجهة طلب التثبيت كـ PWA =====
     (function(){
       var deferredPrompt, banner=document.getElementById('installBanner');
       window.addEventListener('beforeinstallprompt',function(e){
@@ -191,7 +192,7 @@
       window.addEventListener('appinstalled',function(){banner.classList.remove('show')});
     })();
 
-    // ===== تسجيل الـ Service Worker الأساسي =====
+    // ===== تسجيل الـ Service Worker المسؤول عن إشعارات الخلفية =====
     (function(){
       if('serviceWorker' in navigator){
         navigator.serviceWorker.register('sw.js').then(function(reg){
@@ -200,13 +201,11 @@
       }
     })();
 
-    // ===== تهيئة وإعداد Firebase Cloud Messaging (FCM) الحديثة =====
-    // استيراد الدوال بنظام الـ Modules لمنع أي تداخل أو تهنيج في التصفح
+    // ===== استدعاء إعدادات بروتوكول Firebase FCM الحديثة لمشروعك الجديد =====
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
     import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js";
 
     (function(){
-      // استعلام عن إعدادات Firebase الديناميكية من الـ Apps Script الخاص بمحطتك
       var xhr = new XMLHttpRequest();
       xhr.open('GET', document.getElementById('appFrame').src.split('/exec')[0] + '/exec?fn=getFirebaseConfig');
       xhr.onload = function() {
@@ -222,7 +221,6 @@
 
     function initFCM(config) {
       try {
-        // تهيئة الـ App
         const app = initializeApp({
           apiKey: config.apiKey,
           authDomain: config.authDomain,
@@ -234,20 +232,19 @@
 
         const messaging = getMessaging(app);
 
-        // طلب صلاحية الإشعارات من المتصفح
+        // طلب صلاحية الإشعارات الفورية
         Notification.requestPermission().then(function(perm) {
           if (perm === 'granted') {
-            // توليد الـ Token الفريد للجهاز
             getToken(messaging, { vapidKey: config.vapidKey }).then(function(token) {
               console.log('FCM token:', token);
               localStorage.setItem('fcm_token', token);
-              // إرسال الـ Token فوراً للإطار (iframe) لتحديث شيت الموظفين
+              // تمرير الـ Token مباشرة للفورم داخل الـ iframe لحفظه في الشيت
               document.getElementById('appFrame').contentWindow.postMessage({type:'fcm_token', token:token}, '*');
             }).catch(function(err){console.log('FCM token error:', err)});
           }
         });
 
-        // معالجة الإشعارات المستلمة في الواجهة الأمامية (Foreground Messages)
+        // استقبال الإشعارات في الواجهة الأمامية (Foreground)
         onMessage(messaging, function(payload) {
           var title = payload.notification?.title || 'إجازات مرشحة زفتى';
           var body = payload.notification?.body || '';
@@ -259,7 +256,7 @@
       } catch(e) { console.log('FCM init error:', e); }
     }
 
-    // ===== طلب الموقع الجغرافي وحفظه بـ LocalStorage =====
+    // ===== تتبع الموقع الجغرافي وحفظه بذاكرة المتصفح المحلیة لربطه بالحضور والانصراف =====
     (function() {
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(function(pos) {
@@ -269,7 +266,7 @@
       }
     })();
 
-    // ===== استقبال الأحداث وتجهيز بيانات الجهاز لإرسالها للـ iframe =====
+    // ===== إرسال بيانات الجهاز والموقع لشيت جوجل عبر الـ Iframe عند الطلب =====
     window.addEventListener('message', function(e) {
       if (e.data && e.data.type === 'get_device_info') {
         var info = {
@@ -287,7 +284,7 @@
       }
     });
 
-    // ===== إدارة حالة الاتصال بالإنترنت =====
+    // مراقبة شبكة الاتصال
     window.addEventListener('offline',function(){document.getElementById('offline').classList.add('show')});
     window.addEventListener('online',function(){document.getElementById('offline').classList.remove('show')});
   </script>
