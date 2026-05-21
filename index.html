@@ -253,15 +253,7 @@
       } catch(e) { console.log('FCM init error:', e); }
     }
 
-    // ===== تتبع الموقع الجغرافي =====
-    (function() {
-      if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(function(pos) {
-          localStorage.setItem('user_lat', pos.coords.latitude);
-          localStorage.setItem('user_lng', pos.coords.longitude);
-        }, function() {}, {timeout:10000, enableHighAccuracy:true});
-      }
-    })();
+    // ===== تتبع الموقع الجغرافي (Disabled) =====
 
     // ===== إرسال بيانات الجهاز للـ Iframe =====
     window.addEventListener('message', function(e) {
@@ -269,8 +261,8 @@
         var info = {
           type: 'device_info',
           fcmToken: localStorage.getItem('fcm_token') || '',
-          lat: localStorage.getItem('user_lat') || '',
-          lng: localStorage.getItem('user_lng') || '',
+          lat: '',
+          lng: '',
           deviceType: navigator.userAgentData?.model || navigator.platform || '',
           os: navigator.userAgentData?.platform || navigator.platform || '',
           browser: navigator.userAgent.match(/Chrome\/([\d.]+)/)?.[0] || navigator.userAgent,
