@@ -167,7 +167,7 @@
     (function(){
       var frame=document.getElementById('appFrame');
       var splash=document.getElementById('splash');
-      var baseUrl = 'https://script.google.com/macros/s/AKfycbw6dPKTIm_rfiG43LZ9taworCV1U1L4GhZ8WvpjanfS9RliIPqOt4BwNdu6pa62Wf2xvQ/exec';
+      var baseUrl = 'https://script.google.com/macros/s/AKfycbzLveoqtxBi6bHZVuWZ6P5yTv3YnkKtvwc5M5spBqtU-TWdaoJJiR-3bKUuaMlx89qDqA/exec';
       var params = new URLSearchParams(window.location.search);
       var token = params.get('token');
       frame.src = token ? baseUrl + '?token=' + token : baseUrl;
@@ -211,18 +211,13 @@
     import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js";
 
     (function(){
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', document.getElementById('appFrame').src.split('/exec')[0] + '/exec?fn=getFirebaseConfig');
-      xhr.onload = function() {
-        try {
-          var fbConfig = JSON.parse(xhr.responseText);
-          if (fbConfig && fbConfig.apiKey) {
-            initFCM(fbConfig);
-          }
-        } catch(e) { console.log("Firebase config load error:", e); }
-      };
-      xhr.send();
+      var s = document.createElement('script');
+      s.src = document.getElementById('appFrame').src.split('/exec')[0] + '/exec?fn=getFirebaseConfig&callback=handleFirebaseConfig';
+      document.body.appendChild(s);
     })();
+    function handleFirebaseConfig(config) {
+      if (config && config.apiKey) initFCM(config);
+    }
 
     function initFCM(config) {
       try {
