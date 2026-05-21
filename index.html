@@ -60,7 +60,8 @@
         name:'إجازات مرشحة زفتى',short_name:'إجازات زفتى',
         description:'نظام إدارة الإجازات - محطة مياه زفتى',
         start_url:'.',display:'standalone',
-        background_color:#1e293b,theme_color:'#0ea5e9',
+        background_color: '#1e293b', // تم الإصلاح هنا بإضافة علامات التنصيص
+        theme_color:'#0ea5e9',
         dir:'rtl',lang:'ar',
         icons:[{src:i192,sizes:'192x192',type:'image/png'},{src:i512,sizes:'512x512',type:'image/png',purpose:'any maskable'}]
       };
@@ -286,7 +287,7 @@
 
     // مراقبة شبكة الاتصال
     window.addEventListener('offline',function(){document.getElementById('offline').classList.add('show')});
-    window.addEventListener('online',function(){document.getElementById('offline').classList.remove('show')});
+    window.addEventListener('online',function(){document.getElementById('online').classList.remove('show')});
   </script>
 </body>
 </html>
