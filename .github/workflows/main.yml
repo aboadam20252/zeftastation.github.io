@@ -1,9 +1,10 @@
 name: Build APK
 on:
-  workflow_dispatch:
   push:
     paths:
       - 'android/**'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,14 +16,16 @@ jobs:
           distribution: 'temurin'
       - uses: android-actions/setup-android@v3
       - name: Install SDK
-        run: |
-          $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0" 2>&1 || true
+        run: $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0" 2>&1 || true
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.5
       - name: Build
         working-directory: android
         run: |
-          gradle wrapper --gradle-version=8.5
-          ./gradlew assembleDebug
+          gradle wrapper --no-daemon --gradle-version=8.5
+          ./gradlew assembleRelease --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: ZeftaStation-APK
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: android/app/build/outputs/apk/release/*.apk
