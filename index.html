@@ -167,7 +167,7 @@
     (function(){
       var frame=document.getElementById('appFrame');
       var splash=document.getElementById('splash');
-      var baseUrl = 'https://script.google.com/macros/s/AKfycby_y1NW5pCSzFOMoR9qKJW8dVMws5aXy_SxmBlTQhasmwNBjgbeQ7TWzafuoHYW9BNmjw/exec';
+      var baseUrl = 'https://script.google.com/macros/s/AKfycbyh5MgHDRHQ8Gxu4ZrBYSgK_LqQ7aSQTy8SLdzPYnJItPsyZrJd5pjKhON2n5bFMzyZOw/exec';
       var params = new URLSearchParams(window.location.search);
       var token = params.get('token');
       frame.src = token ? baseUrl + '?token=' + token : baseUrl;
