@@ -158,11 +158,15 @@
     <p style="color:#94a3b8">يتطلب التطبيق اتصالاً بالإنترنت</p>
     <button class="retry-btn" onclick="location.reload()">إعادة المحاولة</button>
   </div>
-  <iframe id="appFrame" src="https://script.google.com/macros/s/AKfycbyh5MgHDRHQ8Gxu4ZrBYSgK_LqQ7aSQTy8SLdzPYnJItPsyZrJd5pjKhON2n5bFMzyZOw/exec" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
+  <iframe id="appFrame" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
   <script>
     // ===== التطبيق الرئيسي =====
     (function(){
       var frame=document.getElementById('appFrame');
+      var baseUrl='https://script.google.com/macros/s/AKfycbyh5MgHDRHQ8Gxu4ZrBYSgK_LqQ7aSQTy8SLdzPYnJItPsyZrJd5pjKhON2n5bFMzyZOw/exec';
+      var params=new URLSearchParams(window.location.search);
+      var token=params.get('token');
+      frame.src=token?baseUrl+'?token='+encodeURIComponent(token):baseUrl;
       var splash=document.getElementById('splash');
       frame.onload=function(){
         splash.classList.add('hide');
