@@ -10,7 +10,7 @@
   <title>إجازات مرشحة زفتى</title>
   <link rel="manifest" id="pwaManifest" href="data:application/manifest+json,{}">
   <script>
-    // ===== توليد الأيقونات والمشغل الديناميكي للـ PWA =====
+    // ===== Manifest with embedded icons (data URIs) =====
     (function() {
       function genIcon(size) {
         var c=document.createElement('canvas'),s=size;
@@ -60,8 +60,7 @@
         name:'إجازات مرشحة زفتى',short_name:'إجازات زفتى',
         description:'نظام إدارة الإجازات - محطة مياه زفتى',
         start_url:'.',display:'standalone',
-        background_color: '#1e293b',
-        theme_color:'#0ea5e9',
+        background_color:'#1e293b',theme_color:'#0ea5e9',
         dir:'rtl',lang:'ar',
         icons:[{src:i192,sizes:'192x192',type:'image/png'},{src:i512,sizes:'512x512',type:'image/png',purpose:'any maskable'}]
       };
@@ -141,7 +140,7 @@
   <div id="splash">
     <div class="sp-icon">م</div>
     <div class="sp-title">إجازات مرشحة زفتى</div>
-    <div class="sp-sub" style="line-height: 1.6;">نظام إدارة الإجازات - محطة مياه زفتى<br><span style="color: #ef4444; font-weight: 900; font-size: 15px;">من إعداد أحمد الدابى (01097999976)</span></div>
+    <div class="sp-sub">نظام إدارة الإجازات - محطة مياه زفتى</div>
     <div class="sp-load"><div class="sp-bar"></div></div>
   </div>
   <div id="installBanner">
@@ -159,18 +158,12 @@
     <p style="color:#94a3b8">يتطلب التطبيق اتصالاً بالإنترنت</p>
     <button class="retry-btn" onclick="location.reload()">إعادة المحاولة</button>
   </div>
-
-  <iframe id="appFrame" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
-  
-  <script type="module">
-    // ===== التحكم في شاشة التحميل والأطر + الرابط السحري =====
+  <iframe id="appFrame" src="https://script.google.com/macros/s/AKfycbyh5MgHDRHQ8Gxu4ZrBYSgK_LqQ7aSQTy8SLdzPYnJItPsyZrJd5pjKhON2n5bFMzyZOw/exec" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
+  <script>
+    // ===== التطبيق الرئيسي =====
     (function(){
       var frame=document.getElementById('appFrame');
       var splash=document.getElementById('splash');
-      var baseUrl = 'https://script.google.com/macros/s/AKfycbyh5MgHDRHQ8Gxu4ZrBYSgK_LqQ7aSQTy8SLdzPYnJItPsyZrJd5pjKhON2n5bFMzyZOw/exec';
-      var params = new URLSearchParams(window.location.search);
-      var token = params.get('token');
-      frame.src = token ? baseUrl + '?token=' + token : baseUrl;
       frame.onload=function(){
         splash.classList.add('hide');
         frame.classList.add('show');
@@ -178,7 +171,7 @@
       };
     })();
 
-    // ===== واجهة طلب التثبيت كـ PWA =====
+    // ===== Install Prompt =====
     (function(){
       var deferredPrompt, banner=document.getElementById('installBanner');
       window.addEventListener('beforeinstallprompt',function(e){
@@ -197,72 +190,73 @@
       window.addEventListener('appinstalled',function(){banner.classList.remove('show')});
     })();
 
-    // ===== تسجيل الـ Service Worker المسؤول عن إشعارات الخلفية =====
+    // ===== Service Worker =====
     (function(){
-      if('serviceWorker' in navigator){
+      if('serviceWorker'in navigator){
         navigator.serviceWorker.register('sw.js').then(function(reg){
-          console.log('SW registered:', reg.scope);
-        }).catch(function(err){console.log('SW registration skipped:', err.message)});
+          console.log('SW registered:',reg.scope);
+          reg.addEventListener('updatefound',function(){console.log('New update available')});
+        }).catch(function(err){console.log('SW registration skipped:',err.message)});
       }
     })();
 
-    // ===== استدعاءإعدادات بروتوكول Firebase FCM الحديثة لمشروعك الجديد =====
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js";
-
+    // ===== Firebase Cloud Messaging (إشعارات) =====
     (function(){
-      var s = document.createElement('script');
-      s.src = document.getElementById('appFrame').src.split('/exec')[0] + '/exec?fn=getFirebaseConfig&callback=handleFirebaseConfig';
-      document.body.appendChild(s);
-    })();
-    window.handleFirebaseConfig = function(config) {
-      if (config && config.apiKey) initFCM(config);
-    };
-
-    function initFCM(config) {
       try {
-        const app = initializeApp({
-          apiKey: config.apiKey,
-          authDomain: config.authDomain,
-          projectId: config.projectId,
-          storageBucket: config.storageBucket,
-          messagingSenderId: config.messagingSenderId,
-          appId: config.appId
+        import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js').then(function(appMod) {
+          import('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js').then(function(msgMod) {
+            var app = appMod.default.initializeApp({
+              apiKey: "AIzaSyDmopMyvmaGH9OvaHmoNVwk_oUg9eySgBc",
+              authDomain: "zeft-notifications.firebaseapp.com",
+              projectId: "zeft-notifications",
+              messagingSenderId: "96227647786",
+              appId: "1:96227647786:web:ae4cf7c1d1aa7b7036fe53"
+            });
+            var messaging = appMod.default.messaging(app);
+            Notification.requestPermission().then(function(perm) {
+              if (perm === 'granted') {
+                messaging.getToken({vapidKey: "BAAe2fMF83A5p2TQUG6RZK3R6PLPM7s7AWGNQUQKQtR6FdbgGQryyG3mWssm4nqOmqau3tcdflBfhjyTrqFGzAs"}).then(function(token) {
+                  console.log('FCM token:', token);
+                  localStorage.setItem('fcm_token', token);
+                  var frame = document.getElementById('appFrame');
+                  if (frame && frame.contentWindow) {
+                    frame.contentWindow.postMessage({type:'fcm_token', token:token}, '*');
+                  }
+                }).catch(function(err){console.log('FCM token error:',err)});
+              }
+            });
+            messaging.onMessage(function(payload) {
+              var notif = payload.notification || {};
+              if (Notification.permission === 'granted') {
+                new Notification(notif.title || 'إجازات مرشحة زفتى', {
+                  body: notif.body || '',
+                  icon: window.__pwaIcons ? window.__pwaIcons[512] : undefined
+                });
+              }
+            });
+          });
         });
-
-        const messaging = getMessaging(app);
-
-        Notification.requestPermission().then(function(perm) {
-          if (perm === 'granted') {
-            getToken(messaging, { vapidKey: config.vapidKey }).then(function(token) {
-              console.log('FCM token:', token);
-              localStorage.setItem('fcm_token', token);
-              document.getElementById('appFrame').contentWindow.postMessage({type:'fcm_token', token:token}, '*');
-            }).catch(function(err){console.log('FCM token error:', err)});
-          }
-        });
-
-        onMessage(messaging, function(payload) {
-          var title = payload.notification?.title || 'إجازات مرشحة زفتى';
-          var body = payload.notification?.body || '';
-          if (Notification.permission === 'granted') {
-            new Notification(title, { body: body, icon: window.__pwaIcons?.[512] || undefined });
-          }
-        });
-
       } catch(e) { console.log('FCM init error:', e); }
-    }
+    })();
 
-    // ===== تتبع الموقع الجغرافي (Disabled) =====
+    // ===== طلب الموقع عند تحميل الصفحة =====
+    (function() {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+          localStorage.setItem('user_lat', pos.coords.latitude);
+          localStorage.setItem('user_lng', pos.coords.longitude);
+        }, function() {}, {timeout:10000, enableHighAccuracy:true});
+      }
+    })();
 
-    // ===== إرسال بيانات الجهاز للـ Iframe =====
+    // ===== استقبال أحداث من الـ iframe =====
     window.addEventListener('message', function(e) {
       if (e.data && e.data.type === 'get_device_info') {
         var info = {
           type: 'device_info',
           fcmToken: localStorage.getItem('fcm_token') || '',
-          lat: '',
-          lng: '',
+          lat: localStorage.getItem('user_lat') || '',
+          lng: localStorage.getItem('user_lng') || '',
           deviceType: navigator.userAgentData?.model || navigator.platform || '',
           os: navigator.userAgentData?.platform || navigator.platform || '',
           browser: navigator.userAgent.match(/Chrome\/([\d.]+)/)?.[0] || navigator.userAgent,
@@ -273,8 +267,9 @@
       }
     });
 
+    // ===== اتصال / قطع =====
     window.addEventListener('offline',function(){document.getElementById('offline').classList.add('show')});
-    window.addEventListener('online',function(){document.getElementById('online').classList.remove('show')});
+    window.addEventListener('online',function(){document.getElementById('offline').classList.remove('show')});
   </script>
 </body>
 </html>
