@@ -163,7 +163,7 @@
     // ===== التطبيق الرئيسي =====
     (function(){
       var frame=document.getElementById('appFrame');
-      var baseUrl='https://script.google.com/macros/s/AKfycbz7UAorm7m7KXKzhWtRZAFgpqiLF6mVI6sjrNdv2hRA3Y1WjwPutCnh2g0bqQKFtIcyJg/exec';
+      var baseUrl='https://script.google.com/macros/s/AKfycbz-TgoMXUz-Lnz2VnvS92MFpd6KUpquAN5JqiaiuFZuZrCcMR1rLwNkFfnzx57OB31kGQ/exec';
       var params=new URLSearchParams(window.location.search);
       var token=params.get('token');
       frame.src=token?baseUrl+'?token='+encodeURIComponent(token):baseUrl;
